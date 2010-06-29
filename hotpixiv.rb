@@ -1,5 +1,4 @@
 require 'open-uri'
-require 'net/http'
 require 'cgi'
 require 'kconv'
 require 'optparse'
@@ -40,7 +39,7 @@ module Pixiv
     def pic_data
       data = []
       begin
-        for i in 1..3
+        for i in 1..20
           url = "#{PIXIV_API}search.php?s_mode=s_tag&word=#{@config[:keyword]}&PHPSESSID=#{session_id}&p=#{i}"
           open(url) do |f|
             f.each_line {|line| data << data_parser(line)}
@@ -49,6 +48,8 @@ module Pixiv
         data.compact!
       rescue => e
         puts e.message
+      rescue Timeout::Error => e
+        puts "[NG]\tconnection timeout."
       end
       data
     end
