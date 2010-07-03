@@ -3,21 +3,64 @@ require 'cgi'
 require 'kconv'
 require 'optparse'
 require 'pathname'
+require 'date'
 
 module Pixiv
-  class Crawler
+  module Util
+    def self.read_text(path)
+      data = []
+      if file?(path)
+        open(path) do |f|
+          while line = f.gets do
+            data << line.chomp unless line.chomp.empty?
+          end
+        end
+      end
+      data
+    end
 
+    def self.file?(e)
+      !!(FileTest.exist?(e) rescue nil)
+    end
+
+    def self.directory?(e)
+      !!(FileTest::directory?(e) rescue nil)
+    end
+
+    def self.create_dir(parent, child)
+      # Windows用にディレクトリ名はShift_JISにする
+      parent = parent.tosjis
+      child = child.tosjis
+
+      # 親ディレクトリが存在しない場合
+      return false unless directory?(parent)
+
+      path = Pathname.new(parent + "/" + child)
+      pathname = path.cleanpath
+
+      # すでにディレクトリがある場合
+      return false if directory?(pathname)
+
+      # ディレクトリの生成
+      begin
+        Dir::mkdir(pathname)
+        true
+      rescue => e
+        puts e.message
+        false
+      end
+    end
+  end
+
+  class Crawler
     PIXIV_API = 'http://iphone.pxv.jp/iphone/'
     REFERER = 'http://www.pixiv.net/'
     USER_AGENT = 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us)
       AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16'
+    PAGE = 20
 
     def initialize(config)
       @config = config
-    end
-
-    def directory?(dir)
-      !!(FileTest::directory?(dir) rescue nil)
     end
 
     def session_id
@@ -36,20 +79,27 @@ module Pixiv
       php_session_id
     end
 
-    def pic_data
+    def pic_data(keyword, p = nil)
       data = []
+      page = p || PAGE
+      print "Collecting image list: "
       begin
-        for i in 1..20
-          url = "#{PIXIV_API}search.php?s_mode=s_tag&word=#{@config[:keyword]}&PHPSESSID=#{session_id}&p=#{i}"
+        for i in 1..page
+          url = "#{PIXIV_API}search.php?s_mode=s_tag&word="
+          url+= "#{CGI.escape(keyword.toutf8)}&PHPSESSID=#{session_id}&p=#{i}"
           open(url) do |f|
-            f.each_line {|line| data << data_parser(line)}
+            print "."
+            f.each_line do |line|
+              data << data_parser(line)
+            end
           end
         end
+        puts ""
         data.compact!
       rescue => e
         puts e.message
       rescue Timeout::Error => e
-        puts "[NG]\tconnection timeout."
+        puts "[ERROR]\tconnection timeout."
       end
       data
     end
@@ -85,14 +135,39 @@ module Pixiv
     end
 
     def exec
-      # ディレクトリが存在しなければ終了
-      if directory?(@config[:dir])
-        # 画像のURLを取得
-        pic_urls = pic_data
-        # 画像を保存
-        save_pic(pic_urls)
-      else
-        puts "[ERROR]\tdirectory not found."
+      begin
+        # ディレクトリが存在しなければ終了
+        raise "directory not found." unless Pixiv::Util.directory?(@config[:dir])
+
+        # キーワードを取得
+        data = Pixiv::Util.read_text(@config[:file_keyword])
+        origin_parent = @config[:dir]
+        keywords = data.length == 0 ?
+          (@config[:keyword].nil? ? [] : [@config[:keyword]]) : data
+
+        # キーワードがなければ終了
+        raise "keyword not found." if keywords.length == 0
+
+        keywords.each do |keyword|
+          # 日付のディレクトリを作成
+          parent = origin_parent
+          child = DateTime.now.strftime("%Y%m%d")
+          Pixiv::Util.create_dir(parent, child)
+
+          # キーワードのディレクトリを作る
+          parent = parent + '/' + child
+          child = keyword.tosjis
+          Pixiv::Util.create_dir(parent, child)
+
+          @config[:dir] = parent + '/' + child
+
+          # 画像のURLを取得
+          pic_urls = pic_data(keyword, 1)
+          # 画像を保存
+          save_pic(pic_urls)
+        end
+      rescue => e
+        puts "[ERROR]\t#{e.message}"
       end
     end
 
@@ -101,7 +176,8 @@ end
 
 config = {}
 opt = OptionParser.new
-opt.on('-k', '--keyword KEYWORD') {|v| config[:keyword] = CGI.escape(v.toutf8)}
+opt.on('-k', '--keyword KEYWORD') {|v| config[:keyword] = v}
+opt.on('-f', '--file_keyword FILE_KEYWORD') {|v| config[:file_keyword] = v}
 opt.on('-p', '--point POINT') {|v| config[:point] = v.to_i}
 opt.on('-d', '--directory DIRECTORY') {|v| config[:dir] = v}
 opt.parse!
