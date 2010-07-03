@@ -1,6 +1,7 @@
 require 'open-uri'
 require 'cgi'
 require 'kconv'
+require 'nkf'
 require 'optparse'
 require 'pathname'
 require 'date'
@@ -30,7 +31,7 @@ module Pixiv
     def self.create_dir(parent, child)
       # Windows用にディレクトリ名はShift_JISにする
       parent = parent.tosjis
-      child = child.tosjis
+      child = tosjis(child)
 
       # 親ディレクトリが存在しない場合
       return false unless directory?(parent)
@@ -48,6 +49,14 @@ module Pixiv
       rescue => e
         puts e.message
         false
+      end
+    end
+
+    def self.tosjis(s)
+      if (RUBY_VERSION < "1.9")
+        return NKF::nkf('-Wsm0', s)
+      else
+        return s.encode("Shift_JIS")
       end
     end
   end
@@ -156,13 +165,13 @@ module Pixiv
 
           # キーワードのディレクトリを作る
           parent = parent + '/' + child
-          child = keyword.tosjis
+          child = keyword
           Pixiv::Util.create_dir(parent, child)
 
-          @config[:dir] = parent + '/' + child
+          @config[:dir] = parent + '/' + Pixiv::Util.tosjis(child)
 
           # 画像のURLを取得
-          pic_urls = pic_data(keyword)
+          pic_urls = pic_data(keyword, 5)
           # 画像を保存
           save_pic(pic_urls)
         end
