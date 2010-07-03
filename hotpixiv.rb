@@ -162,7 +162,7 @@ module Pixiv
           @config[:dir] = parent + '/' + child
 
           # 画像のURLを取得
-          pic_urls = pic_data(keyword, 1)
+          pic_urls = pic_data(keyword)
           # 画像を保存
           save_pic(pic_urls)
         end
