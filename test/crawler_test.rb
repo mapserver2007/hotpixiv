@@ -1,4 +1,9 @@
 #!/usr/bin/ruby
+# -*- coding: utf-8 -*-
+
+HOTPIXIV_ROOT = File.dirname(File.expand_path($PROGRAM_NAME))
+$: << HOTPIXIV_ROOT + "/../"
+
 require 'test/unit'
 require 'hotpixiv'
 
