@@ -11,7 +11,7 @@ Generate and install the gem, execute a command.
 
 === Gem Installation
 
-	gem install hotpixiv
+  gem install hotpixiv
 
 == How to use
 
