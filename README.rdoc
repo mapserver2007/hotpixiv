@@ -1,0 +1,60 @@
+= hotpixiv
+
+hotpixiv is auto image collection tool in pixiv(http://www.pixiv.net).
+
+== Installation
+
+Generate and install the gem, execute a command.
+
+  rake gemspec
+  gem build hotpixiv.gemspec
+
+=== Gem Installation
+
+	gem install hotpixiv
+
+== How to use
+
+The available option are:
+
+  -h # help
+  -k # set the search keyword (only one).
+  -f # set the search keywords from textfile (more than one).
+  (choose either of -k or -f)
+  -p # acquire the image which is bigger than pixiv image's total point.
+  -d # set the directory path. downloaded image stores there.
+
+== Synopsis
+
+execute command example:
+
+  hotpixiv -p 500 -f c:/keywords.txt -d c:/pixiv
+
+== Copyright
+
+* Author::    mapserver2007(Ryuichi TANAKA) <mapserver2007@gmail.com>
+* Copyright:: Copyright (c) 2010 mapserver2007
+
+== License
+
+  (The MIT License)
+
+  Copyright (c) 2010 mapserver2007
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.

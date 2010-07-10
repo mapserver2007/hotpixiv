@@ -1,0 +1,19 @@
+#!/usr/bin/ruby
+# -*- coding: utf-8 -*-
+
+HOTPIXIV_ROOT = File.dirname(File.expand_path($PROGRAM_NAME))
+$: << HOTPIXIV_ROOT + "/../lib"
+
+require 'hotpixiv'
+require 'optparse'
+
+config = {}
+opt = OptionParser.new
+opt.on('-k', '--keyword KEYWORD') {|v| config[:keyword] = v}
+opt.on('-f', '--file_keyword FILE_KEYWORD') {|v| config[:file_keyword] = v}
+opt.on('-p', '--point POINT') {|v| config[:point] = v.to_i}
+opt.on('-d', '--directory DIRECTORY') {|v| config[:dir] = v}
+opt.parse!
+
+pixiv = HotPixiv::Crawler.new(config)
+pixiv.exec

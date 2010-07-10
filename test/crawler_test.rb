@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 HOTPIXIV_ROOT = File.dirname(File.expand_path($PROGRAM_NAME))
-$: << HOTPIXIV_ROOT + "/../"
+$: << HOTPIXIV_ROOT + "/../lib/"
 
 require 'test/unit'
 require 'hotpixiv'
@@ -12,7 +12,7 @@ class CrawlerTest < Test::Unit::TestCase
   def setup
     @temp_parent_dir = "C:/" + DateTime.now.strftime("%Y%m%d%H%M%S")
     @test_keyword = '天使ちゃんマジ天使'
-    @crawler = Pixiv::Crawler.new({
+    @crawler = HotPixiv::Crawler.new({
       :keyword => @test_keyword,
       :point => 1000,
       :dir => @temp_parent_dir

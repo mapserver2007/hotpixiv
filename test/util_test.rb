@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 HOTPIXIV_ROOT = File.dirname(File.expand_path($PROGRAM_NAME))
-$: << HOTPIXIV_ROOT + "/../"
+$: << HOTPIXIV_ROOT + "/../lib/"
 
 require 'test/unit'
 require 'hotpixiv'
@@ -49,7 +49,7 @@ class UtilTest < Test::Unit::TestCase
     f = File.open(filepath, 'w')
     f.close
 
-    assert_equal(Pixiv::Util.file?(filepath), true)
+    assert_equal(HotPixiv::Util.file?(filepath), true)
 
     # テスト用ディレクトリ削除
     delete_dir
@@ -60,7 +60,7 @@ class UtilTest < Test::Unit::TestCase
     # テスト用ディレクトリ作成
     create_dir
 
-    assert_equal(Pixiv::Util.directory?(@temp_parent_dir), true)
+    assert_equal(HotPixiv::Util.directory?(@temp_parent_dir), true)
 
     # テスト用ディレクトリ削除
     delete_dir
@@ -75,7 +75,7 @@ class UtilTest < Test::Unit::TestCase
     t = DateTime.now
     child_dir = t.strftime("%Y%m%d")
     assert_equal(
-      Pixiv::Util.create_dir(@temp_parent_dir, child_dir),
+      HotPixiv::Util.create_dir(@temp_parent_dir, child_dir),
       true
     )
 
@@ -90,7 +90,7 @@ class UtilTest < Test::Unit::TestCase
 
     # 日本語を含むディレクトリを作成
     assert_equal(
-      Pixiv::Util.create_dir(@temp_parent_dir, @keyword_dir),
+      HotPixiv::Util.create_dir(@temp_parent_dir, @keyword_dir),
       true
     )
 
@@ -121,7 +121,7 @@ class UtilTest < Test::Unit::TestCase
     f.close
 
     # ファイルを読み込み、データが取得できること
-    data = Pixiv::Util.read_text(filepath)
+    data = HotPixiv::Util.read_text(filepath)
     assert_not_equal(data.length, 0)
 
     # テスト用ディレクトリ削除
@@ -134,7 +134,7 @@ class UtilTest < Test::Unit::TestCase
   def test_ng_create_dir_by_keyword
     # 親ディレクトリが存在しない場合
     assert_equal(
-      Pixiv::Util.create_dir(@temp_parent_dir, @keyword_dir),
+      HotPixiv::Util.create_dir(@temp_parent_dir, @keyword_dir),
       false
     )
 
@@ -142,9 +142,9 @@ class UtilTest < Test::Unit::TestCase
     # テスト用ディレクトリ作成
     create_dir
 
-    Pixiv::Util.create_dir(@temp_parent_dir, @keyword_dir)
+    HotPixiv::Util.create_dir(@temp_parent_dir, @keyword_dir)
     assert_equal(
-      Pixiv::Util.create_dir(@temp_parent_dir, @keyword_dir),
+      HotPixiv::Util.create_dir(@temp_parent_dir, @keyword_dir),
       false
     )
 
@@ -173,7 +173,7 @@ class UtilTest < Test::Unit::TestCase
     f.close
 
     # ファイルを読み込み、データが取得できること
-    data = Pixiv::Util.read_text(filepath)
+    data = HotPixiv::Util.read_text(filepath)
     assert_equal(data.length, 0)
 
     # テスト用ディレクトリ削除

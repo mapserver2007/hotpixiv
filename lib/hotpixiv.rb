@@ -2,11 +2,12 @@ require 'open-uri'
 require 'cgi'
 require 'kconv'
 require 'nkf'
-require 'optparse'
 require 'pathname'
 require 'date'
 
-module Pixiv
+module HotPixiv
+  VERSION = '0.0.1'
+
   module Util
     def self.read_text(path)
       data = []
@@ -29,10 +30,6 @@ module Pixiv
     end
 
     def self.create_dir(parent, child)
-      # Windows用にディレクトリ名はShift_JISにする
-      parent = parent.tosjis
-      child = tosjis(child)
-
       # 親ディレクトリが存在しない場合
       return false unless directory?(parent)
 
@@ -67,6 +64,7 @@ module Pixiv
     USER_AGENT = 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us)
       AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16'
     PAGE = 20
+    POINT = 0
 
     def initialize(config)
       @config = config
@@ -118,9 +116,10 @@ module Pixiv
     end
 
     def data_parser(data)
+      point = @config[:point] || POINT
       e = data.split(/,/)
       # 総合点：e[16], 評価回数：e[15], 閲覧回数：e[17]
-      if trim(e[16]).to_i > @config[:point]
+      if trim(e[16]).to_i > point
         "http://img#{trim(e[4])}.pixiv.net/img/#{trim(e[6]).split(/\//)[4]}/#{trim(e[0])}.#{trim(e[2])}" rescue nil
       end
     end
@@ -146,10 +145,10 @@ module Pixiv
     def exec
       begin
         # ディレクトリが存在しなければ終了
-        raise "directory not found." unless Pixiv::Util.directory?(@config[:dir])
+        raise "directory not found." unless HotPixiv::Util.directory?(@config[:dir])
 
         # キーワードを取得
-        data = Pixiv::Util.read_text(@config[:file_keyword])
+        data = HotPixiv::Util.read_text(@config[:file_keyword])
         origin_parent = @config[:dir]
         keywords = data.length == 0 ?
           (@config[:keyword].nil? ? [] : [@config[:keyword]]) : data
@@ -161,17 +160,18 @@ module Pixiv
           # 日付のディレクトリを作成
           parent = origin_parent
           child = DateTime.now.strftime("%Y%m%d")
-          Pixiv::Util.create_dir(parent, child)
+          HotPixiv::Util.create_dir(parent, child)
 
           # キーワードのディレクトリを作る
-          parent = parent + '/' + child
-          child = keyword
-          Pixiv::Util.create_dir(parent, child)
+          parent = (parent + '/' + child).tosjis
+          child = HotPixiv::Util.tosjis(keyword)
+          child = keyword.tosjis if child.empty?
+          HotPixiv::Util.create_dir(parent, child)
 
-          @config[:dir] = parent + '/' + Pixiv::Util.tosjis(child)
+          @config[:dir] = parent + '/' + child
 
           # 画像のURLを取得
-          pic_urls = pic_data(keyword, 5)
+          pic_urls = pic_data(keyword)
           # 画像を保存
           save_pic(pic_urls)
         end
@@ -182,14 +182,3 @@ module Pixiv
 
   end
 end
-
-config = {}
-opt = OptionParser.new
-opt.on('-k', '--keyword KEYWORD') {|v| config[:keyword] = v}
-opt.on('-f', '--file_keyword FILE_KEYWORD') {|v| config[:file_keyword] = v}
-opt.on('-p', '--point POINT') {|v| config[:point] = v.to_i}
-opt.on('-d', '--directory DIRECTORY') {|v| config[:dir] = v}
-opt.parse!
-
-pixiv = Pixiv::Crawler.new(config)
-pixiv.exec
