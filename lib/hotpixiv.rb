@@ -210,7 +210,6 @@ module HotPixiv
           save_pic(pic_urls)
         end
       rescue => e
-        p e
         puts "[ERROR]\t#{e.message}"
       end
     end
