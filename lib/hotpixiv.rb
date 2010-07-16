@@ -143,7 +143,7 @@ module HotPixiv
               save_and_download_pic(url_with_page)
               puts "[OK]\t#{@filepath.cleanpath}"
             end
-          rescue OpenURI::HTTPError => e
+          rescue OpenURI::HTTPError
             next
           end
         # ホスト名が違う場合
@@ -155,7 +155,7 @@ module HotPixiv
             save_and_download_pic(url)
             puts "[OK]\t#{@filepath.cleanpath}"
           # 画像のダウンロードに失敗した場合
-          rescue SocketError => e
+          rescue SocketError
             puts "[NG]\t#{@filepath.cleanpath}"
             next
           end
