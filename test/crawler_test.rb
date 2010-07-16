@@ -53,7 +53,7 @@ class CrawlerTest < Test::Unit::TestCase
     # テスト用ディレクトリ作成
     create_dir
 
-    # 配列でURLのリストを取得
+    # 配列でURLのリストを取得できること
     urls = @crawler.pic_data(@test_keyword, 1)
     result = false
     unless urls.length == 0
@@ -67,6 +67,49 @@ class CrawlerTest < Test::Unit::TestCase
       end
     end
     assert(result)
+
+    # テスト用ディレクトリ削除
+    delete_dir
+  end
+
+  # 画像保存Server名の数値が一桁の場合に画像を取得できること
+  # 例：http://img3.pixiv.net/img/xxx/111111.jpg
+  def test_ok_pic_data_fixed_servername
+    # 画像サーバの名前がimg\d{1}(削除等で変更される可能性あり)
+    url = "http://img1.pixiv.net/img/lunatic-joker/11899522.jpg"
+    fixed_url = "http://img01.pixiv.net/img/lunatic-joker/11899522.jpg"
+    urls = [url]
+
+    # テスト用ディレクトリ作成
+    create_dir
+
+    # 画像を保存
+    @crawler.save_pic(urls)
+
+    # 保存した画像が存在するかどうか
+    savepath = Pathname.new(@temp_parent_dir + "/" + File.basename(fixed_url))
+    assert(HotPixiv::Util.file?(savepath))
+
+    # テスト用ディレクトリ削除
+    delete_dir
+  end
+
+  # ページに分かれている画像を取得できること(漫画)
+  def test_ok_pic_data_with_page
+    # ページに分かれているURL(削除等で変更される可能性あり)
+    url = "http://img50.pixiv.net/img/motimiyahotti/11924998.jpg"
+    url_with_page = "http://img50.pixiv.net/img/motimiyahotti/11924998_p0.jpg"
+    urls = [url]
+
+    # テスト用ディレクトリ作成
+    create_dir
+
+    # 画像を保存
+    @crawler.save_pic(urls)
+
+    # 保存した画像が存在するかどうか
+    savepath = Pathname.new(@temp_parent_dir + "/" + File.basename(url_with_page))
+    assert(HotPixiv::Util.file?(savepath))
 
     # テスト用ディレクトリ削除
     delete_dir

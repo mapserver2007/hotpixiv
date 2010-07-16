@@ -4,9 +4,10 @@ require 'kconv'
 require 'nkf'
 require 'pathname'
 require 'date'
+require 'timeout'
 
 module HotPixiv
-  VERSION = '0.0.1'
+  VERSION = '0.0.2'
 
   module Util
     def self.read_text(path)
@@ -63,6 +64,7 @@ module HotPixiv
     REFERER = 'http://www.pixiv.net/'
     USER_AGENT = 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us)
       AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16'
+    TIMEOUT = 5
     PAGE = 20
     POINT = 0
 
@@ -94,10 +96,12 @@ module HotPixiv
         for i in 1..page
           url = "#{PIXIV_API}search.php?s_mode=s_tag&word="
           url+= "#{CGI.escape(keyword.toutf8)}&PHPSESSID=#{session_id}&p=#{i}"
-          open(url) do |f|
-            print "."
-            f.each_line do |line|
-              data << data_parser(line)
+          timeout(TIMEOUT) do
+            open(url) do |f|
+              print "."
+              f.each_line do |line|
+                data << data_parser(line)
+              end
             end
           end
         end
@@ -120,24 +124,54 @@ module HotPixiv
       e = data.split(/,/)
       # 総合点：e[16], 評価回数：e[15], 閲覧回数：e[17]
       if trim(e[16]).to_i > point
-        "http://img#{trim(e[4])}.pixiv.net/img/#{trim(e[6]).split(/\//)[4]}/#{trim(e[0])}.#{trim(e[2])}" rescue nil
+        "http://img#{trim(e[4])}.pixiv.net/img/#{trim(e[6]).split(/\//)[4]}/#{trim(e[0])}.#{trim(e[2])}"
       end
     end
 
     def save_pic(urls)
       urls.each do |url|
-        filename = File.basename(url)
-        filepath = Pathname.new(@config[:dir] + "/" + filename)
         begin
-          open(filepath.cleanpath, 'wb') do |output|
-            open(url, "Referer" => REFERER) do |f|
-              output.write(f.read)
-              puts "[OK]\t#{filepath.cleanpath}"
+          save_and_download_pic(url)
+          puts "[OK]\t#{@filepath.cleanpath}"
+        # マンガの場合
+        rescue OpenURI::HTTPError
+          begin
+            0.upto(0 / 0.0) do |page|
+              url_with_page = url.gsub(/(\d*)\.[jpg|png|gif]{3}/) do |matched|
+                f = matched.split(/\./)
+                "#{f[0]}_p#{page}.#{f[1]}"
+              end
+              save_and_download_pic(url_with_page)
+              puts "[OK]\t#{@filepath.cleanpath}"
             end
+          rescue OpenURI::HTTPError => e
+            next
+          end
+        # ホスト名が違う場合
+        rescue SocketError
+          begin
+            if /^http:\/\/img(\d)./ =~ url
+              url.gsub!(/^http?:\/\/img/) do |m| m + "0" end if $1.length == 1
+            end
+            save_and_download_pic(url)
+            puts "[OK]\t#{@filepath.cleanpath}"
+          # 画像のダウンロードに失敗した場合
+          rescue SocketError => e
+            puts "[NG]\t#{@filepath.cleanpath}"
+            next
           end
         rescue
-          File.unlink(filepath.cleanpath)
-          puts "[NG]\t#{filepath.cleanpath}"
+          File.unlink(@filepath.cleanpath)
+          puts "[NG]\t#{@filepath.cleanpath}"
+        end
+      end
+    end
+
+    def save_and_download_pic(url)
+      @filepath = Pathname.new(@config[:dir] + "/" + File.basename(url))
+      open(url, "Referer" => REFERER) do |f|
+        open(@filepath.cleanpath, 'wb') do |output|
+          output.write(f.read)
         end
       end
     end
@@ -171,7 +205,8 @@ module HotPixiv
           @config[:dir] = parent + '/' + child
 
           # 画像のURLを取得
-          pic_urls = pic_data(keyword)
+          pic_urls = pic_data(keyword, 1)
+
           # 画像を保存
           save_pic(pic_urls)
         end

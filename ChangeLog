@@ -1,4 +1,5 @@
 == 0.0.1 / 2010-07-10
-
 * initial release
 
+== 0.0.2 / 2010-07-17
+* bug fixed. fail download when URL with the page or image server name are wrong.
