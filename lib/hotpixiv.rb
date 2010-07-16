@@ -64,7 +64,7 @@ module HotPixiv
     REFERER = 'http://www.pixiv.net/'
     USER_AGENT = 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us)
       AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16'
-    TIMEOUT = 5
+    TIMEOUT = 10
     PAGE = 20
     POINT = 0
 
@@ -92,10 +92,10 @@ module HotPixiv
       data = []
       page = p || PAGE
       print "Collecting image list: "
-      begin
-        for i in 1..page
-          url = "#{PIXIV_API}search.php?s_mode=s_tag&word="
-          url+= "#{CGI.escape(keyword.toutf8)}&PHPSESSID=#{session_id}&p=#{i}"
+      for i in 1..page
+        url = "#{PIXIV_API}search.php?s_mode=s_tag&word="
+        url+= "#{CGI.escape(keyword.toutf8)}&PHPSESSID=#{session_id}&p=#{i}"
+        begin
           timeout(TIMEOUT) do
             open(url) do |f|
               print "."
@@ -104,15 +104,14 @@ module HotPixiv
               end
             end
           end
+        rescue Timeout::Error
+          puts ""
+          puts "[ERROR]\tconnection timeout."
+          next
         end
-        puts ""
-        data.compact!
-      rescue => e
-        puts e.message
-      rescue Timeout::Error => e
-        puts "[ERROR]\tconnection timeout."
       end
-      data
+      puts ""
+      data.compact!
     end
 
     def trim(e)
@@ -129,7 +128,7 @@ module HotPixiv
     end
 
     def save_pic(urls)
-      urls.each do |url|
+      urls.compact.each do |url|
         begin
           save_and_download_pic(url)
           puts "[OK]\t#{@filepath.cleanpath}"
@@ -205,12 +204,13 @@ module HotPixiv
           @config[:dir] = parent + '/' + child
 
           # 画像のURLを取得
-          pic_urls = pic_data(keyword, 1)
+          pic_urls = pic_data(keyword)
 
           # 画像を保存
           save_pic(pic_urls)
         end
       rescue => e
+        p e
         puts "[ERROR]\t#{e.message}"
       end
     end
