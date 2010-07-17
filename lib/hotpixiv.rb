@@ -100,7 +100,8 @@ module HotPixiv
             open(url) do |f|
               print "."
               f.each_line do |line|
-                data << data_parser(line)
+                d = data_parser(line)
+                data << d unless d.nil?
               end
             end
           end
@@ -111,7 +112,7 @@ module HotPixiv
         end
       end
       puts ""
-      data.compact!
+      data
     end
 
     def trim(e)
@@ -128,7 +129,7 @@ module HotPixiv
     end
 
     def save_pic(urls)
-      urls.compact.each do |url|
+      urls.each do |url|
         begin
           save_and_download_pic(url)
           puts "[OK]\t#{@filepath.cleanpath}"
@@ -155,7 +156,7 @@ module HotPixiv
             save_and_download_pic(url)
             puts "[OK]\t#{@filepath.cleanpath}"
           # 画像のダウンロードに失敗した場合
-          rescue SocketError
+          rescue => e
             puts "[NG]\t#{@filepath.cleanpath}"
             next
           end
@@ -204,7 +205,7 @@ module HotPixiv
           @config[:dir] = parent + '/' + child
 
           # 画像のURLを取得
-          pic_urls = pic_data(keyword)
+          pic_urls = pic_data(child)
 
           # 画像を保存
           save_pic(pic_urls)
