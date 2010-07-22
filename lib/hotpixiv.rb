@@ -7,7 +7,7 @@ require 'date'
 require 'timeout'
 
 module HotPixiv
-  VERSION = '0.0.2'
+  VERSION = '0.0.3'
 
   module Util
     def self.read_text(path)
@@ -45,7 +45,7 @@ module HotPixiv
         Dir::mkdir(pathname)
         true
       rescue => e
-        puts e.message
+        $stderr.puts e.message
         false
       end
     end
@@ -72,29 +72,12 @@ module HotPixiv
       @config = config
     end
 
-    def session_id
-      php_session_id = nil
-      begin
-        url = "#{PIXIV_API}login.php?mode=login&pixiv_id=&pass=&skip=0"
-        open(url) do |e|
-          cookie = e.meta["set-cookie"]
-          re = Regexp.new('PHPSESSID=(.*?);')
-          sess_str = cookie.split(/,/)[2]
-          php_session_id = re.match(sess_str)[1]
-        end
-      rescue => e
-        puts e.message
-      end
-      php_session_id
-    end
-
     def pic_data(keyword, p = nil)
       data = []
       page = p || PAGE
       print "Collecting image list: "
       for i in 1..page
-        url = "#{PIXIV_API}search.php?s_mode=s_tag&word="
-        url+= "#{CGI.escape(keyword.toutf8)}&PHPSESSID=#{session_id}&p=#{i}"
+        url = "#{PIXIV_API}search.php?s_mode=s_tag&word=#{CGI.escape(keyword.toutf8)}&p=#{i}"
         begin
           timeout(TIMEOUT) do
             open(url) do |f|
@@ -107,7 +90,7 @@ module HotPixiv
           end
         rescue Timeout::Error
           puts ""
-          puts "[ERROR]\tconnection timeout."
+          $stderr.puts "[ERROR]\tconnection timeout."
           next
         end
       end
@@ -156,13 +139,13 @@ module HotPixiv
             save_and_download_pic(url)
             puts "[OK]\t#{@filepath.cleanpath}"
           # 画像のダウンロードに失敗した場合
-          rescue => e
-            puts "[NG]\t#{@filepath.cleanpath}"
+          rescue
+            $stderr.puts "[NG]\t#{@filepath.cleanpath}"
             next
           end
         rescue
           File.unlink(@filepath.cleanpath)
-          puts "[NG]\t#{@filepath.cleanpath}"
+          $stderr.puts "[NG]\t#{@filepath.cleanpath}"
         end
       end
     end
@@ -211,9 +194,8 @@ module HotPixiv
           save_pic(pic_urls)
         end
       rescue => e
-        puts "[ERROR]\t#{e.message}"
+        $stderr.puts "[ERROR]\t#{e.message}"
       end
     end
-
   end
 end

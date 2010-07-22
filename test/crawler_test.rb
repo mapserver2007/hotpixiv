@@ -29,11 +29,6 @@ class CrawlerTest < Test::Unit::TestCase
 
   #============ 正常系テスト ============#
 
-  # セッションIDの取得
-  def test_ok_session_id
-    assert_match(/^[a-z0-9]{32}$/, @crawler.session_id)
-  end
-
   # 画像URLを取得
   def test_ok_pic_data
     # 配列でURLのリストを取得できること

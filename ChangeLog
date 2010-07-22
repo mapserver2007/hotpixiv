@@ -3,3 +3,6 @@
 
 == 0.0.2 / 2010-07-17
 * bug fixed. fail download when URL with the page or image server name are wrong.
+
+== 0.0.3 / 2010-07-22
+* deal with pixiv renewal.
